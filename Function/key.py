@@ -12,7 +12,7 @@ class Key(object):
     def OnKeyPress(self, event):  #实现键盘控制飞行器移动
         if event.Key in Key_dict:
             self.dire = Key_dict[event.Key]
-            print(self.dire)
+            
         elif event.Key == "Escape":
             exit(0)
         else:
@@ -25,5 +25,7 @@ class Key(object):
 
     def stop(self):
         self.dire = ""
+
+    
 
 
