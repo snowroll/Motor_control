@@ -114,23 +114,23 @@ class Quadcopter( object ):
         self.noise_std = noise_std
         # Overwrite the get_target method if the target is to be controlled by a
         # function instead of by V-REP
-        if target_func is not None:
+        # if target_func is not None:
           
-            self.step = 0
-            self.target_func = target_func
+        #     self.step = 0
+        #     self.target_func = target_func
 
-            def get_target():
-                err, t_ori = vrep.simxGetObjectOrientation(self.cid, self.target, -1,
-                                                    vrep_mode )
-                err, t_pos = vrep.simxGetObjectPosition(self.cid, self.target, -1,
-                                                vrep_mode )
+        #     def get_target():
+        #         err, t_ori = vrep.simxGetObjectOrientation(self.cid, self.target, -1,
+        #                                             vrep_mode )
+        #         err, t_pos = vrep.simxGetObjectPosition(self.cid, self.target, -1,
+        #                                         vrep_mode )
         
-                # Convert orientations to z-y-x convention
-                t_ori = convert_angles(t_ori)
-                self.t_pos, self.t_ori = self.target_func( self.step )
-                self.step += 1
+        #         # Convert orientations to z-y-x convention
+        #         t_ori = convert_angles(t_ori)
+        #         self.t_pos, self.t_ori = self.target_func( self.step )
+        #         self.step += 1
 
-            self.get_target = get_target
+        #     self.get_target = get_target
   
     def stop( self ):
         """
@@ -156,14 +156,19 @@ class Quadcopter( object ):
         self.failed = True
         exit(1)
 
-    def get_target( self ):
-        err, self.t_ori = vrep.simxGetObjectOrientation(self.cid, self.target, -1,
-                                                    vrep_mode )
-        err, self.t_pos = vrep.simxGetObjectPosition(self.cid, self.target, -1,
-                                                vrep_mode )
+    # def get_target( self ):
+    #     err, self.t_ori = vrep.simxGetObjectOrientation(self.cid, self.target, -1,
+    #                                                 vrep_mode )
+    #     err, self.t_pos = vrep.simxGetObjectPosition(self.cid, self.target, -1,
+    #                                             vrep_mode )
         
-        # Convert orientations to z-y-x convention
-        self.t_ori = convert_angles(self.t_ori)
+    #     # Convert orientations to z-y-x convention
+    #     self.t_ori = convert_angles(self.t_ori)
+    def get_target(self, obj):
+        gain_pos, gain_ori = obj.product()
+        for i in range(3):
+            self.t_pos[i] += gain_pos[i]
+            self.t_ori[i] += gain_ori[i]
 
     def calculate_error( self ):
         # Return the state variables
@@ -231,51 +236,51 @@ class Quadcopter( object ):
                                         raw_bytes,
                                         vrep_mode)
     
-    def handle_input( self, values ):
+    # def handle_input( self, values, obj):
         
-        # Send motor commands to V-REP
-        self.send_motor_commands( values )
+    #     # Send motor commands to V-REP
+    #     self.send_motor_commands( values )
 
-        # Retrieve target location
-        self.get_target()
+    #     # Retrieve target location
+    #     self.get_target(obj)
 
-        # Calculate state error
-        self.calculate_error()
+    #     # Calculate state error
+    #     self.calculate_error()
 
-    def bound( self, value ):
-        if abs( value ) > self.max_target_distance:
-            return math.copysign( self.max_target_distance, value )
-        else:
-            return value
+    # def bound( self, value ):
+    #     if abs( value ) > self.max_target_distance:
+    #         return math.copysign( self.max_target_distance, value )
+    #     else:
+    #         return value
 
-    def get_state( self ):
-        """
-        Returns the current state. Used for recording benchmarks of performance
-        """
-        return [self.pos, self.ori, 
-                self.lin, self.ang, 
-                self.t_pos, self.t_ori]
+    # def get_state( self ):
+    #     """
+    #     Returns the current state. Used for recording benchmarks of performance
+    #     """
+    #     return [self.pos, self.ori, 
+    #             self.lin, self.ang, 
+    #             self.t_pos, self.t_ori]
 
-    def handle_output( self ):
-        l = math.sqrt(self.pos_err[0]**2 + self.pos_err[1]**2)
-        bl = self.bound(l)
-        r = (bl+.1)/(l+.1)
+    # def handle_output( self ):
+    #     l = math.sqrt(self.pos_err[0]**2 + self.pos_err[1]**2)
+    #     bl = self.bound(l)
+    #     r = (bl+.1)/(l+.1)
 
-        return [r*self.pos_err[0], r*self.pos_err[1], self.bound(self.pos_err[2]), 
-                self.lin[0], self.lin[1], self.lin[2], 
-                self.ori_err[0], self.ori_err[1], self.ori_err[2], 
-                self.ang[0], self.ang[1], self.ang[2]]
+    #     return [r*self.pos_err[0], r*self.pos_err[1], self.bound(self.pos_err[2]), 
+    #             self.lin[0], self.lin[1], self.lin[2], 
+    #             self.ori_err[0], self.ori_err[1], self.ori_err[2], 
+    #             self.ang[0], self.ang[1], self.ang[2]]
 
-    def __call__( self, t, values ):
-        """ This class will be callable within a nengo node. It will accept as input
-        the control signals for each rotor, and will output the relevant state
-        variables (position, velocity, orientation, angular velocity).
-        """
-        self.count += 1
-        if self.count == int(round(sim_dt/dt)):
-            self.count = 0
-            self.handle_input( values )
+    # def __call__( self, t, values ):
+    #     """ This class will be callable within a nengo node. It will accept as input
+    #     the control signals for each rotor, and will output the relevant state
+    #     variables (position, velocity, orientation, angular velocity).
+    #     """
+    #     self.count += 1
+    #     if self.count == int(round(sim_dt/dt)):
+    #         self.count = 0
+    #         self.handle_input( values )
 
-            if SYNC:
-                vrep.simxSynchronousTrigger( self.cid )
-        return self.handle_output()
+    #         if SYNC:
+    #             vrep.simxSynchronousTrigger( self.cid )
+    #     return self.handle_output()

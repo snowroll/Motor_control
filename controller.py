@@ -56,10 +56,10 @@ class PD(Quadcopter):
                                                [5.6535],
                                               ])
 
-    def control_step(self):
+    def control_step(self, obj):
         self.count += 1
         if self.count == 10:  #python time 1ms  vrep time 10ms
-            self.get_target()
+            self.get_target(obj)
             self.calculate_error()
 
         self.state = np.matrix([[self.pos_err[0]],
@@ -111,11 +111,11 @@ class PID( PD ):
                                     [0.0], # Yaw
                                 ])
 
-    def control_step( self ):
+    def control_step( self, obj ):
 
         self.count += 1
         if self.count == 10:
-            self.get_target()
+            self.get_target(obj)
             self.calculate_error()
         
             self.state = np.matrix([[self.pos_err[0]],

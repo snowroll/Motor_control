@@ -12,6 +12,7 @@ class Hand(object):
     """docstring for Hand"""
     def __init__(self):
         super(Hand, self).__init__()
+
         # Network params
         learning_rate = 0.03
         num_epochs = 10
@@ -76,7 +77,6 @@ class Hand(object):
                 result = rank 
 
         return Direct[result]
-
 
 
 # demo ---- #
