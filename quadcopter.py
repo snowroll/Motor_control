@@ -6,9 +6,13 @@ import ctypes
 import math
 import sys
 import time
+import cv2
+import PIL
+import matplotlib.pyplot as plt
 
 sim_dt = 0.01 
 dt = 0.001
+
 
 SYNC = True
 vrep_mode = vrep.simx_opmode_oneshot
@@ -83,6 +87,7 @@ class Quadcopter( object ):
                                                 vrep.simx_opmode_oneshot_wait )
         err, self.target = vrep.simxGetObjectHandle(self.cid, "Quadricopter_target",
                                                 vrep.simx_opmode_oneshot_wait )
+        err, self.laser_signal = vrep.simxReadStringStream(self.cid, 'laser_data', vrep.simx_opmode_streaming)
         
         # Reset the motor commands to zero
         packedData=vrep.simxPackFloats([0,0,0,0])
@@ -101,6 +106,7 @@ class Quadcopter( object ):
         self.t_ori = [0,0,0]
         self.ang = [0,0,0]
         self.count = 0
+        self.img_count = 0
 
         # Maximum target distance error that can be returned
         self.max_target_distance = max_target_distance
@@ -235,52 +241,73 @@ class Quadcopter( object ):
         err = vrep.simxSetStringSignal(self.cid, "rotorTargetVelocities",
                                         raw_bytes,
                                         vrep_mode)
-    
-    # def handle_input( self, values, obj):
+
+    #----------------   get laser data and draw map  -------------------#
+    def draw_map(self, slam):
+        x = []
+        y = []
+        img_np = []
+        err, self.laser_signal = vrep.simxReadStringStream(self.cid, 'laser_data', vrep.simx_opmode_buffer)
         
-    #     # Send motor commands to V-REP
-    #     self.send_motor_commands( values )
+        if err == vrep.simx_return_ok:
+            laser_data = vrep.simxUnpackFloats(self.laser_signal)
+            for i in range(0, len(laser_data), 3):
+                x.append(laser_data[i])
+                y.append(laser_data[i + 1])
+            if len(x) != 0:
+                img_np = self.draw_plt(x, y)
 
-    #     # Retrieve target location
-    #     self.get_target(obj)
+            if len(img_np) != 0 and self.img_count == 10:
+                self.img_count = 0
+                slam.product(img_np)
+            self.img_count += 1
+        
+            
+    def draw_plt(self, x, y):
+        figure = plt.figure()
+        figure.patch.set_facecolor('black')
+        plt.xlim(xmax = 6, xmin = -6)
+        plt.ylim(ymax = 6, ymin = -6)
+        plt.axis('off')
+        plt.gca().xaxis.set_major_locator(plt.NullLocator())
+        plt.gca().yaxis.set_major_locator(plt.NullLocator())
+        plt.subplots_adjust(top = 1, bottom = 0, right = 1, left = 0, hspace = 0, wspace = 0)
+        plt.margins(0,0)
+        plt.plot(x, y, 'ro')
+       
+        im = self.fig2img( figure )
+        w, h = im.size
+        im = np.array(im)
+        res = cv2.resize(im, dsize=(math.ceil(w / 8), math.ceil(h / 8)), interpolation=cv2.INTER_CUBIC)
+        # print(res.shape)
+        return res
+    
+    def fig2data (self, fig):
+        """
+        @brief Convert a Matplotlib figure to a 4D numpy array with RGBA channels and return it
+        @param fig a matplotlib figure
+        @return a numpy 3D array of RGBA values
+        """
+        # draw the renderer
+        fig.canvas.draw ( )
+    
+        # Get the RGBA buffer from the figure
+        w,h = fig.canvas.get_width_height()
+        buf = np.fromstring ( fig.canvas.tostring_argb(), dtype=np.uint8 )
+        buf.shape = ( w, h,4 )
+    
+        # canvas.tostring_argb give pixmap in ARGB mode. Roll the ALPHA channel to have it in RGBA mode
+        buf = np.roll ( buf, 3, axis = 2 )
+        return buf
 
-    #     # Calculate state error
-    #     self.calculate_error()
+    def fig2img (self, fig):
+        """
+        @brief Convert a Matplotlib figure to a PIL Image in RGBA format and return it
+        @param fig a matplotlib figure
+        @return a Python Imaging Library ( PIL ) image
+        """
+        # put the figure pixmap into a numpy array
+        buf = self.fig2data ( fig )
+        w, h, d = buf.shape
+        return PIL.Image.frombytes( "RGBA", ( w ,h ), buf.tostring( ) )
 
-    # def bound( self, value ):
-    #     if abs( value ) > self.max_target_distance:
-    #         return math.copysign( self.max_target_distance, value )
-    #     else:
-    #         return value
-
-    # def get_state( self ):
-    #     """
-    #     Returns the current state. Used for recording benchmarks of performance
-    #     """
-    #     return [self.pos, self.ori, 
-    #             self.lin, self.ang, 
-    #             self.t_pos, self.t_ori]
-
-    # def handle_output( self ):
-    #     l = math.sqrt(self.pos_err[0]**2 + self.pos_err[1]**2)
-    #     bl = self.bound(l)
-    #     r = (bl+.1)/(l+.1)
-
-    #     return [r*self.pos_err[0], r*self.pos_err[1], self.bound(self.pos_err[2]), 
-    #             self.lin[0], self.lin[1], self.lin[2], 
-    #             self.ori_err[0], self.ori_err[1], self.ori_err[2], 
-    #             self.ang[0], self.ang[1], self.ang[2]]
-
-    # def __call__( self, t, values ):
-    #     """ This class will be callable within a nengo node. It will accept as input
-    #     the control signals for each rotor, and will output the relevant state
-    #     variables (position, velocity, orientation, angular velocity).
-    #     """
-    #     self.count += 1
-    #     if self.count == int(round(sim_dt/dt)):
-    #         self.count = 0
-    #         self.handle_input( values )
-
-    #         if SYNC:
-    #             vrep.simxSynchronousTrigger( self.cid )
-    #     return self.handle_output()

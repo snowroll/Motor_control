@@ -6,14 +6,11 @@ import sys
 import imageio
 from io import StringIO
 import signal
-import pandas
-import pickle
 import numpy as np
-from controller import PD, PID
-from Function.Obstacle import Obstacle
 from Function.key import Key, gesture
-from Function.Detect import Detect
 from Gesture.hand import Hand
+from Function.Slam import Slam
+from controller import PD, PID
 import vrep
 
 
@@ -32,7 +29,7 @@ obj = None
 #-------------------- Instance -----------#
 key_cont = Key()
 gesture_cont = gesture()
-laser = Detect()
+slam = Slam()
 
  
 
@@ -42,8 +39,6 @@ if __name__ == '__main__':
     model_name = 'pid'
     control_name = 'key'
     target_func = None  
-
-    print('argv', sys.argv)
     
     if len(sys.argv) == 2:
         model_name = sys.argv[1]  #diff model
@@ -71,10 +66,8 @@ if __name__ == '__main__':
         elif control_name == 'hand':
             obj = gesture_cont
 
-        err, singal = vrep.simxReadStringStream(control.cid, 'laser_data', vrep.simx_opmode_streaming)
-
         while True:
-            control.control_step(obj)
+            control.control_step(obj, slam)
             
                 
         

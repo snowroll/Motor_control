@@ -56,29 +56,30 @@ class PD(Quadcopter):
                                                [5.6535],
                                               ])
 
-    def control_step(self, obj):
+    def control_step(self, obj, slam):
         self.count += 1
         if self.count == 10:  #python time 1ms  vrep time 10ms
             self.get_target(obj)
+            self.draw_map(slam)
             self.calculate_error()
 
-        self.state = np.matrix([[self.pos_err[0]],
-                                [self.pos_err[1]],
-                                [self.pos_err[2]],
-                                [self.lin[0]],
-                                [self.lin[1]],
-                                [self.lin[2]],
-                                [self.ori_err[0]],
-                                [self.ori_err[1]],
-                                [self.ori_err[2]],
-                                [self.ang[0]],
-                                [self.ang[1]],
-                                [self.ang[2]],
-                               ])   
+            self.state = np.matrix([[self.pos_err[0]],
+                                    [self.pos_err[1]],
+                                    [self.pos_err[2]],
+                                    [self.lin[0]],
+                                    [self.lin[1]],
+                                    [self.lin[2]],
+                                    [self.ori_err[0]],
+                                    [self.ori_err[1]],
+                                    [self.ori_err[2]],
+                                    [self.ang[0]],
+                                    [self.ang[1]],
+                                    [self.ang[2]],
+                                ])   
 
-        self.count = 0
-        self.send_motor_commands( self.compute_output() )
-        vrep.simxSynchronousTrigger( self.cid )
+            self.count = 0
+            self.send_motor_commands( self.compute_output() )
+            vrep.simxSynchronousTrigger( self.cid )
 
     def compute_output( self ):
         """ Computes the rotor velocities based on PID control """
@@ -111,10 +112,11 @@ class PID( PD ):
                                     [0.0], # Yaw
                                 ])
 
-    def control_step( self, obj ):
+    def control_step( self, obj, slam ):
 
         self.count += 1
         if self.count == 10:
+            self.draw_map(slam)
             self.get_target(obj)
             self.calculate_error()
         
@@ -135,6 +137,8 @@ class PID( PD ):
             self.update_integral()
             self.count = 0
             self.send_motor_commands( self.compute_output() )
+            # print('draw map')
+            # 
             vrep.simxSynchronousTrigger( self.cid )
         else:
             self.update_integral()
