@@ -1,0 +1,19 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+<qresource>
+<file alias="src/front.png">src/front.png</file>
+<file alias="src/front_click.png">src/front_click.png</file>
+<file alias="src/back.png">src/back.png</file>
+<file alias="src/back_click.png">src/back_click.png</file>
+<file alias="src/left.png">src/left.png</file>
+<file alias="src/left_click.png">src/left_click.png</file>
+<file alias="src/right.png">src/right.png</file>
+<file alias="src/right_click.png">src/right_click.png</file>
+<file alias="src/up.png">src/up.png</file>
+<file alias="src/up_click.png">src/up_click.png</file>
+<file alias="src/down.png">src/down.png</file>
+<file alias="src/down_click.png">src/down_click.png</file>
+<file alias="src/camera.jpg">src/camera.jpg</file>
+<file alias="src/map.jpeg">src/map.jpeg</file>
+</qresource>
+</RCC>
