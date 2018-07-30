@@ -11,7 +11,6 @@ import socket
 import threading, sys, time
 
 HOST = '127.0.0.1'
-PORT = 8887
 
 class Controller(QMainWindow, Ui_UAV):
     def __init__(self, *args, **kwargs):
@@ -42,8 +41,10 @@ class Controller(QMainWindow, Ui_UAV):
         self.s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
         self.ip = "127.0.0.1"
         self.connect()
-        threading._start_new_thread(self.receive,())
-
+        self.s.settimeout(0.001)  #for no blocking commuticate
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.receive)
+        self.timer.start(50)
 
         self.show()
 
@@ -146,28 +147,18 @@ class Controller(QMainWindow, Ui_UAV):
             print('unexpect error')
             sys.exit(-1)
  
-    def send_sth(self):
-        # while True:
-        sth='happy'
-        try:
-            self.s.sendall(sth.encode('utf-8'))
-        except ConnectionError:
-            print('connect error')
-            sys.exit(-1)
-        except:
-            print('unexpect error')
-            sys.exit(-1)
- 
     def receive(self):
-        while True:
+        print('time single shot')
+        try:
             data = self.s.recv(40960000)
-            print(data.decode('utf-8'))
-            # if len(data) != 0:
-            #     img = pickle.loads(data, encoding='bytes')
-            #     im = Image.fromarray(img)
-            #     qt_im = ImageQt(im)
-            #     pix = QPixmap.fromImage(qt_im)
-            #     self.slam_img.setPixmap(pix)
+            if len(data) != 0:
+                img = pickle.loads(data, encoding='bytes')
+                im = Image.fromarray(img)
+                qt_im = ImageQt(im)
+                pix = QPixmap.fromImage(qt_im)
+                self.slam_img.setPixmap(pix)
+        except socket.timeout:
+            pass
 
 if __name__ == '__main__':
     app = QApplication([])
@@ -175,3 +166,6 @@ if __name__ == '__main__':
 
     window = Controller()
     app.exec_()
+
+
+#TODO  time机制实时显示图片
