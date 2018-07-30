@@ -20,7 +20,7 @@ class Controller(QMainWindow, Ui_UAV):
         self.setWindowTitle('Controller')
         self.setWindowIcon(QIcon('src/logo.jpeg'))
         self.client = socket.socket()
-        self.step = 1  
+        self.step = 0.2  
 
         #direct control
         self.front.mousePressEvent = self.Front_change
@@ -96,7 +96,11 @@ class Controller(QMainWindow, Ui_UAV):
         self.right.setStyleSheet("border-image: url(:/src/right.png);")
 
     def Send(self, pos, ori):
-        print(pos, ori)
+        str_pos = ' '.join(map(str, pos))
+        str_ori = ' '.join(map(str, ori))
+        data = str_pos + ' ' + str_ori
+        self.s.sendall(data.encode('utf-8'))
+        print('data is ', data)
         
 
     def Quit(self):
@@ -109,23 +113,22 @@ class Controller(QMainWindow, Ui_UAV):
         pos = self.pos_input.text()
         ori = self.ori_input.text()
         if pos == '' and ori == '':
-            self.send_sth()
             QMessageBox.about(self, 'warnning', 'pos and ori are set to 0')
         elif pos == '':
             QMessageBox.about(self, 'warnning', 'pos is set to 0')
             tmp_ori = ori.split(' ')
             for i in range(3):
-                _ori[i] = int(tmp_ori[i])
+                _ori[i] = float(tmp_ori[i])
         elif ori == '':
             QMessageBox.about(self, 'warnning', 'ori is set to 0')
             tmp_pos = pos.split(' ')
             for i in range(3):
-                _pos[i] = int(tmp_pos[i])
+                _pos[i] = float(tmp_pos[i])
         else:
             tmp_pos = pos.split(' ')
             tmp_ori = ori.split(' ')
             for i in range(3):
-                _pos[i], _ori[i] = int(tmp_pos[i]), int(tmp_ori[i])
+                _pos[i], _ori[i] = float(tmp_pos[i]), float(tmp_ori[i])
         self.pos_input.clear()
         self.ori_input.clear()
         self.Send(_pos, _ori)
@@ -158,12 +161,13 @@ class Controller(QMainWindow, Ui_UAV):
     def receive(self):
         while True:
             data = self.s.recv(40960000)
-            if len(data) != 0:
-                img = pickle.loads(data, encoding='bytes')
-                im = Image.fromarray(img)
-                qt_im = ImageQt(im)
-                pix = QPixmap.fromImage(qt_im)
-                self.slam_img.setPixmap(pix)
+            print(data.decode('utf-8'))
+            # if len(data) != 0:
+            #     img = pickle.loads(data, encoding='bytes')
+            #     im = Image.fromarray(img)
+            #     qt_im = ImageQt(im)
+            #     pix = QPixmap.fromImage(qt_im)
+            #     self.slam_img.setPixmap(pix)
 
 if __name__ == '__main__':
     app = QApplication([])

@@ -1,8 +1,6 @@
 # -*- coding:utf-8 -*-
 
-import time
-import os
-import sys
+import time, os, sys
 import imageio
 from io import StringIO
 import signal
@@ -11,27 +9,19 @@ from Function.key import Key, gesture
 from Gesture.hand import Hand
 from Function.Slam import Slam
 from controller import PD, PID
+from Function.Server import server
 import vrep
-
-
-count1 = 0
-def bug():
-    global count1
-    print("debug", count1)
-    count1 += 1
 
 #----------------- Constant --------------#
 dt = 0.001  #program run time 1ms  vrep 10ms
 obj = None
 
-
-
 #-------------------- Instance -----------#
 key_cont = Key()
 gesture_cont = gesture()
 slam = Slam()
-
- 
+server_cont = server()
+print('server begin')
 
 
 if __name__ == '__main__':
@@ -65,6 +55,8 @@ if __name__ == '__main__':
             print("key board control")
         elif control_name == 'hand':
             obj = gesture_cont
+        elif control_name == 'control':
+            obj = server_cont
 
         while True:
             control.control_step(obj, slam)

@@ -116,7 +116,7 @@ class PID( PD ):
 
         self.count += 1
         if self.count == 10:
-            self.draw_map(slam)
+            # self.draw_map(slam)
             self.get_target(obj)
             self.calculate_error()
         
