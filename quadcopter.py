@@ -106,7 +106,7 @@ class Quadcopter( object ):
         self.t_ori = [0,0,0]
         self.ang = [0,0,0]
         self.count = 0
-        self.img_count = 0
+        self.first = True
 
         # Maximum target distance error that can be returned
         self.max_target_distance = max_target_distance
@@ -170,6 +170,7 @@ class Quadcopter( object ):
         
     #     # Convert orientations to z-y-x convention
     #     self.t_ori = convert_angles(self.t_ori)
+
     def get_target(self, obj):
         gain_pos, gain_ori = obj.product()
         for i in range(3):
@@ -243,7 +244,7 @@ class Quadcopter( object ):
                                         vrep_mode)
 
     #----------------   get laser data and draw map  -------------------#
-    def draw_map(self, slam):
+    def draw_map(self, obj):
         x = []
         y = []
         img_np = []
@@ -252,15 +253,16 @@ class Quadcopter( object ):
         if err == vrep.simx_return_ok:
             laser_data = vrep.simxUnpackFloats(self.laser_signal)
             for i in range(0, len(laser_data), 3):
-                x.append(laser_data[i])
-                y.append(laser_data[i + 1])
-            if len(x) != 0:
+                if laser_data[i + 2 ] > 0:  #remove floor data
+                    x.append(laser_data[i])
+                    y.append(laser_data[i + 1])
+            if len(x) != 0 and self.first:
                 img_np = self.draw_plt(x, y)
+                # print('img type ', type(img_np))
+                
 
-            if len(img_np) != 0 and self.img_count == 10:
-                self.img_count = 0
-                slam.product(img_np)
-            self.img_count += 1
+            if len(img_np) != 0:
+                obj.send_data(img_np)
         
             
     def draw_plt(self, x, y):
@@ -279,7 +281,7 @@ class Quadcopter( object ):
         w, h = im.size
         im = np.array(im)
         res = cv2.resize(im, dsize=(math.ceil(w / 8), math.ceil(h / 8)), interpolation=cv2.INTER_CUBIC)
-        # print(res.shape)
+        
         return res
     
     def fig2data (self, fig):

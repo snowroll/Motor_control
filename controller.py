@@ -112,11 +112,12 @@ class PID( PD ):
                                     [0.0], # Yaw
                                 ])
 
-    def control_step( self, obj, slam ):
+    def control_step( self, obj, control_name ):
 
         self.count += 1
         if self.count == 10:
-            # self.draw_map(slam)
+            if control_name == 'control':  #only in controller use slam
+                self.draw_map(obj)
             self.get_target(obj)
             self.calculate_error()
         

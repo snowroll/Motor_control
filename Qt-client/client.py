@@ -1,14 +1,25 @@
+#author chaihj
+#date 2018/07/28
+
 # -*- coding: utf-8 -*-
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PIL import Image
 from PIL.ImageQt import ImageQt
+import numpy as np
 import SRC
 from UAV import Ui_UAV
 import cv2, pickle
 import socket
-import threading, sys, time
+import threading, time
+
+import sys  #for import upper level module
+sys.path.insert(0, '..')
+from Function.Slam import Slam
+
+slam = Slam()
+
 
 HOST = '127.0.0.1'
 
@@ -19,7 +30,7 @@ class Controller(QMainWindow, Ui_UAV):
         self.setWindowTitle('Controller')
         self.setWindowIcon(QIcon('src/logo.jpeg'))
         self.client = socket.socket()
-        self.step = 0.2  
+        self.step = 0.4  
 
         #direct control
         self.front.mousePressEvent = self.Front_change
@@ -44,7 +55,10 @@ class Controller(QMainWindow, Ui_UAV):
         self.s.settimeout(0.001)  #for no blocking commuticate
         self.timer = QTimer()
         self.timer.timeout.connect(self.receive)
-        self.timer.start(50)
+        self.timer.start(5)
+
+        #some unimport function
+        self.slam_img.setScaledContents(True)
 
         self.show()
 
@@ -148,13 +162,17 @@ class Controller(QMainWindow, Ui_UAV):
             sys.exit(-1)
  
     def receive(self):
-        print('time single shot')
         try:
             data = self.s.recv(40960000)
             if len(data) != 0:
+                print('receve data')
                 img = pickle.loads(data, encoding='bytes')
                 im = Image.fromarray(img)
-                qt_im = ImageQt(im)
+                im = np.array(im)
+                # print('receve im type', type(im))
+                slam_res = slam.product(im)  #slam compute
+                slam_res = Image.fromarray(slam_res.astype('uint8')).convert('RGB')
+                qt_im = ImageQt(slam_res)  #convert np array to QPixmap to show
                 pix = QPixmap.fromImage(qt_im)
                 self.slam_img.setPixmap(pix)
         except socket.timeout:

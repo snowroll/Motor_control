@@ -22,8 +22,8 @@ def point(event,x,y,flags,param):
     if event == cv2.EVENT_LBUTTONDOWN:
         print("fuck",x,y)
 
-cv2.namedWindow('2D slam')        
-cv2.setMouseCallback('2D slam', point)
+# cv2.namedWindow('2D slam')        
+# cv2.setMouseCallback('2D slam', point)
 
 class Slam(object):
     """  docstring for Slam """
@@ -206,14 +206,12 @@ class Slam(object):
 
     def product(self, img):
         global IMG_NUM
-        print(IMG_NUM)
-        cv2.imwrite('data/' + str(IMG_NUM) + '.jpg', img)
-        IMG_NUM += 1
+        # print(IMG_NUM)
+        # cv2.imwrite('../Data/laser_data/' + str(IMG_NUM) + '.jpg', img)
+        # IMG_NUM += 1
         result = self.no_T_Slam(img)
-        # cv2.imshow('2D slam', result)
-        cv2.imwrite('res_data/' + str(IMG_NUM) + '.jpg', result)
-        # cv2.waitKey(30)
-        # cv2.destroyAllWindows()
+        # cv2.imwrite('../Data/res_data/' + str(IMG_NUM) + '.jpg', result)
+        return result
 
 # demo --------
 
