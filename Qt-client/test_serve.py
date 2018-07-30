@@ -1,12 +1,38 @@
 # -*- coding: utf-8 -*-
 import socket, sys
 import threading
+from PIL.ImageQt import ImageQt
+from PIL import Image
+import numpy as np
+import pickle
+
+first = True
+second = True
 
 def send_info(conn):
+    global first, second
     while True:
         try:
-            sth = input('say something:\n')
-            conn.sendall(sth.encode('utf-8'))
+            if first:
+                myfile = Image.open('src/up.png')
+                myfile.show()
+                img = np.array(myfile)
+                tran_data = pickle.dumps(img)
+                conn.sendall(tran_data)
+                print('first send')
+                first = False
+            elif second:
+                myfile = Image.open('src/left.png')
+                myfile.show()
+                img = np.array(myfile)
+                tran_data = pickle.dumps(img)
+                conn.sendall(tran_data)
+                print('second send')
+                second = False
+            else:
+                # sock.sendall(tran_data)
+                sth = input('say something:\n')
+                conn.sendall(sth)
         except ConnectionError:
             print('connect error')
             sys.exit(-1)

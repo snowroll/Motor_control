@@ -2,10 +2,11 @@
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
-
-import Image
+from PIL import Image
+from PIL.ImageQt import ImageQt
+import SRC
 from UAV import Ui_UAV
-import cv2
+import cv2, pickle
 import socket
 import threading, sys, time
 
@@ -156,17 +157,13 @@ class Controller(QMainWindow, Ui_UAV):
  
     def receive(self):
         while True:
-            try:
-                r=self.s.recv(1024)
-                if r.decode('utf-8') == 'exit':
-                    sys.exit(-1)
-                print ('get message:'+r.decode('utf-8'))
-            except ConnectionError:
-                print('connect error')
-                sys.exit(-1)
-            except:
-                print('unexpect error')
-                sys.exit(-1)    
+            data = self.s.recv(40960000)
+            if len(data) != 0:
+                img = pickle.loads(data, encoding='bytes')
+                im = Image.fromarray(img)
+                qt_im = ImageQt(im)
+                pix = QPixmap.fromImage(qt_im)
+                self.slam_img.setPixmap(pix)
 
 if __name__ == '__main__':
     app = QApplication([])
