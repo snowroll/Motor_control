@@ -101,6 +101,7 @@ class Quadcopter( object ):
         self.ang = [0,0,0]
         self.count = 0
         self.first = True
+        self.figure = plt.figure()
 
         # Maximum target distance error that can be returned
         self.max_target_distance = max_target_distance
@@ -252,16 +253,17 @@ class Quadcopter( object ):
                     y.append(laser_data[i + 1])
             if len(x) != 0 and self.first:
                 img_np = self.draw_plt(x, y)
+                del x, y
                 # print('img type ', type(img_np))
                 
 
             if len(img_np) != 0:
                 obj.send_data(img_np)
+                
         
             
     def draw_plt(self, x, y):
-        figure = plt.figure()
-        figure.patch.set_facecolor('black')
+        self.figure.patch.set_facecolor('black')
         plt.xlim(xmax = 6, xmin = -6)
         plt.ylim(ymax = 6, ymin = -6)
         plt.axis('off')
@@ -271,11 +273,11 @@ class Quadcopter( object ):
         plt.margins(0,0)
         plt.plot(x, y, 'ro')
        
-        im = self.fig2img( figure )
+        im = self.fig2img( self.figure )
         w, h = im.size
         im = np.array(im)
         res = cv2.resize(im, dsize=(math.ceil(w / 8), math.ceil(h / 8)), interpolation=cv2.INTER_CUBIC)
-        
+        self.figure.clear()
         return res
     
     def fig2data (self, fig):

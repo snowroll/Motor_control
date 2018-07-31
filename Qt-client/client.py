@@ -32,7 +32,7 @@ class Controller(QMainWindow, Ui_UAV):
         self.setWindowTitle('Controller')
         self.setWindowIcon(QIcon('src/logo.jpeg'))
         self.client = socket.socket()
-        self.step = 0.01  
+        self.step = 0.4
 
         #direct control
         self.front.mousePressEvent = self.Front_change
@@ -61,7 +61,6 @@ class Controller(QMainWindow, Ui_UAV):
 
         #camera gesture control
         self.cap = cv2.VideoCapture(0)
-        # self.timer.timeout.connect(self.show_pic)
 
         #some unimport function
         self.slam_img.setScaledContents(True)
@@ -127,6 +126,7 @@ class Controller(QMainWindow, Ui_UAV):
     def show_pic(self):
         success, frame = self.cap.read()
         if success:
+            pass
             direct = gesture.predict(frame)
             print('move to ', direct)
             # if direct == 'U':
@@ -153,10 +153,10 @@ class Controller(QMainWindow, Ui_UAV):
             showImage = QImage(show.data, show.shape[1], show.shape[0], QImage.Format_RGB888)
             self.camera_img.setPixmap(QPixmap.fromImage(showImage))
 
-    def Quit(self):
-        info = 'exit'
-        self.s.sendall(info.encode('utf-8'))
-        QCoreApplication.instance().quit
+    # def Quit(self):
+    #     info = 'exit'
+    #     self.s.sendall(info.encode('utf-8'))
+    #     QCoreApplication.instance().quit
 
     def Get_info_Send(self):
         _pos, _ori = [0, 0, 0], [0, 0, 0]
@@ -205,10 +205,9 @@ class Controller(QMainWindow, Ui_UAV):
                 img = pickle.loads(data, encoding='bytes')
                 im = Image.fromarray(img)
                 im = np.array(im)
-                # print('receve im type', type(im))
                 slam_res = slam.product(im)  #slam compute
-                slam_res = Image.fromarray(slam_res.astype('uint8')).convert('RGB')
-                qt_im = ImageQt(slam_res)  #convert np array to QPixmap to show
+                slam_res1 = Image.fromarray(slam_res.astype('uint8')).convert('RGB')
+                qt_im = ImageQt(slam_res1)  #convert np array to QPixmap to show
                 pix = QPixmap.fromImage(qt_im)
                 self.slam_img.setPixmap(pix)
         except socket.timeout:

@@ -28,10 +28,10 @@ class server(object):
                 data_str = data.decode('utf-8')
                 data_list = data_str.split(' ')
                 for i in range(3):
-                    pos[i] = float(data_list[i])
-                    ori[i] = float(data_list[3+i])
+                    pos[i] = eval(data_list[i])
+                    ori[i] = eval(data_list[3+i])
                 print('pos', pos, 'ori', ori)
-                data = ''
+                del data, data_str, data_list
         except socket.timeout:
             pass
         return pos, ori
@@ -40,6 +40,7 @@ class server(object):
         tran_data = pickle.dumps(img)  #laser detect map
         print('length data', len(tran_data))
         self.conn.sendall(tran_data)
+        del tran_data
 
     def product(self):
         pos, ori = self.rece_data()
