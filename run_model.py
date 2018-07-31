@@ -5,11 +5,11 @@ import imageio
 from io import StringIO
 import signal
 import numpy as np
-from Function.key import Key, gesture
-from Gesture.hand import Hand
-from Function.Slam import Slam
+# from Function.key import gesture
+# from Gesture.hand import Hand
 from controller import PD, PID
-from Function.Server import server
+# from Function.Server import server
+from Server import server
 import vrep
 
 #----------------- Constant --------------#
@@ -17,9 +17,9 @@ dt = 0.001  #program run time 1ms  vrep 10ms
 obj = None
 
 #-------------------- Instance -----------#
-key_cont = Key()
-gesture_cont = gesture()
-slam = Slam()
+# key_cont = Key()
+# gesture_cont = gesture()
+gesture_cont = None
 server_cont = server()
 print('server begin')
 
@@ -59,7 +59,7 @@ if __name__ == '__main__':
             obj = server_cont
 
         while True:
-            control.control_step(obj, slam)
+            control.control_step(obj, control_name)
             
                 
         

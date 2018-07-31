@@ -49,12 +49,6 @@ def convert_angles( ang ):
     roll = math.asin( b((c3*s1+c1*s2*s3)/cp) ) #flipped
     return [roll, pitch, yaw]
 
-count = 0
-def bug():
-    global count
-    print("debug", count)
-    count += 1
-
 class Quadcopter( object ):
     """
     This callable class will return the state of the quadcopter relative to its

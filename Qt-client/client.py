@@ -15,10 +15,12 @@ import socket
 import threading, time
 
 import sys  #for import upper level module
-sys.path.insert(0, '..')
 from Function.Slam import Slam
+from Gesture.hand import Hand
+# from Function.key import gesture
 
 slam = Slam()
+gesture = Hand()
 
 
 HOST = '127.0.0.1'
@@ -30,7 +32,7 @@ class Controller(QMainWindow, Ui_UAV):
         self.setWindowTitle('Controller')
         self.setWindowIcon(QIcon('src/logo.jpeg'))
         self.client = socket.socket()
-        self.step = 0.4  
+        self.step = 0.01  
 
         #direct control
         self.front.mousePressEvent = self.Front_change
@@ -55,10 +57,15 @@ class Controller(QMainWindow, Ui_UAV):
         self.s.settimeout(0.001)  #for no blocking commuticate
         self.timer = QTimer()
         self.timer.timeout.connect(self.receive)
-        self.timer.start(5)
+        self.timer.start(10)
+
+        #camera gesture control
+        self.cap = cv2.VideoCapture(0)
+        # self.timer.timeout.connect(self.show_pic)
 
         #some unimport function
         self.slam_img.setScaledContents(True)
+        self.camera_img.setScaledContents(True)
 
         self.show()
 
@@ -116,7 +123,35 @@ class Controller(QMainWindow, Ui_UAV):
         data = str_pos + ' ' + str_ori
         self.s.sendall(data.encode('utf-8'))
         print('data is ', data)
-        
+
+    def show_pic(self):
+        success, frame = self.cap.read()
+        if success:
+            direct = gesture.predict(frame)
+            print('move to ', direct)
+            # if direct == 'U':
+            #     self.Up_change(self.up.mousePressEvent)
+            #     self.Up(self.up.mouseReleaseEvent)
+            # elif direct == 'D':
+            #     self.Down_change(self.up.mousePressEvent)
+            #     self.Down(self.up.mouseReleaseEvent)
+            # elif direct == 'F':
+            #     self.Front_change(self.up.mousePressEvent)
+            #     self.Front(self.up.mouseReleaseEvent)
+            # elif direct == 'B':
+            #     self.Back_change(self.up.mousePressEvent)
+            #     self.Back(self.up.mouseReleaseEvent)
+            # elif direct == 'L':
+            #     self.Left_change(self.up.mousePressEvent)
+            #     self.Left(self.up.mouseReleaseEvent)
+            # elif direct == 'R':
+            #     self.Right_change(self.up.mousePressEvent)
+            #     self.Right(self.up.mouseReleaseEvent)
+            # else:
+            #     pass
+            show = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            showImage = QImage(show.data, show.shape[1], show.shape[0], QImage.Format_RGB888)
+            self.camera_img.setPixmap(QPixmap.fromImage(showImage))
 
     def Quit(self):
         info = 'exit'
@@ -162,6 +197,7 @@ class Controller(QMainWindow, Ui_UAV):
             sys.exit(-1)
  
     def receive(self):
+        self.show_pic()
         try:
             data = self.s.recv(40960000)
             if len(data) != 0:
