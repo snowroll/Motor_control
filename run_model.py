@@ -1,13 +1,13 @@
 # -*- coding:utf-8 -*-
 
 import time, os, sys
-import imageio
+import imageio, time
 from io import StringIO
 import signal
 import numpy as np
 # from Function.key import gesture
 # from Gesture.hand import Hand
-from controller import PD, PID
+from controller import PD, PID, PIDt
 # from Function.Server import server
 from Server import server
 import vrep
@@ -15,6 +15,7 @@ import vrep
 #----------------- Constant --------------#
 dt = 0.001  #program run time 1ms  vrep 10ms
 obj = None
+interval = 0
 
 #-------------------- Instance -----------#
 # key_cont = Key()
@@ -27,7 +28,7 @@ print('server begin')
 if __name__ == '__main__':
     step_num = 17000
     model_name = 'pid'
-    control_name = 'key'
+    control_name = 'control'
     target_func = None  
     
     if len(sys.argv) == 2:
@@ -42,7 +43,7 @@ if __name__ == '__main__':
         if model_name == 'pd':
             control = PD(target_func = target_func)
         elif model_name == 'pid':
-            control = PID(target_func = target_func)
+            control = PIDt(target_func = target_func)
         else:
             control = PID(target_func = target_func)
 
@@ -60,7 +61,6 @@ if __name__ == '__main__':
 
         while True:
             control.control_step(obj, control_name)
-            
                 
         
             

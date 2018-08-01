@@ -14,7 +14,7 @@ sim_dt = 0.01
 dt = 0.001
 
 
-SYNC = True
+SYNC = False
 vrep_mode = vrep.simx_opmode_oneshot
 
 def b( num ):
@@ -82,6 +82,7 @@ class Quadcopter( object ):
         err, self.target = vrep.simxGetObjectHandle(self.cid, "Quadricopter_target",
                                                 vrep.simx_opmode_oneshot_wait )
         err, self.laser_signal = vrep.simxReadStringStream(self.cid, 'laser_data', vrep.simx_opmode_streaming)
+        err, self.dis_signal = vrep.simxReadStringStream(self.cid, 'dis_data', vrep.simx_opmode_streaming)
         
         # Reset the motor commands to zero
         packedData=vrep.simxPackFloats([0,0,0,0])
@@ -102,6 +103,8 @@ class Quadcopter( object ):
         self.count = 0
         self.first = True
         self.figure = plt.figure()
+        self.x_min = 999
+        self.y_min = 999  #min distance to wall
 
         # Maximum target distance error that can be returned
         self.max_target_distance = max_target_distance
@@ -168,9 +171,37 @@ class Quadcopter( object ):
 
     def get_target(self, obj):
         gain_pos, gain_ori = obj.product()
+
+        err, self.dis_signal = vrep.simxReadStringStream(self.cid, 'dis_data', vrep.simx_opmode_buffer)
+        
+        dis_data = ''
+        if err == vrep.simx_return_ok: 
+            dis_data = vrep.simxUnpackFloats(self.dis_signal)
+            print('dis len', len(dis_data))
+        if len(dis_data) > 0:
+            print('gain_pos', gain_pos, 'dis data', dis_data)
+            if gain_pos[0] > 0:
+                if dis_data[0] < 0.25:
+                    gain_pos[0] = 0
+            if gain_pos[0] < 0:
+                if dis_data[1] < 0.25:
+                    gain_pos[0] = 0
+            if gain_pos[1] > 0:
+                if dis_data[2] < 0.25:
+                    gain_pos[1] = 0
+            if gain_pos[1] < 0:
+                if dis_data[3] < 0.25:
+                    gain_pos[1] = 0
+        
         for i in range(3):
             self.t_pos[i] += gain_pos[i]
             self.t_ori[i] += gain_ori[i]
+
+    def send_target_pos(self):  #bad deal
+        # print('pos is ', self.t_pos)
+        vrep.simxSetObjectPosition(self.cid, self.target, -1, self.t_pos, vrep.simx_opmode_oneshot)
+        # vrep.simxSetObjectOrientation(self.cid, self.target, -1, self.t_ori, vrep.simx_opmode_oneshot)
+        
 
     def calculate_error( self ):
         # Return the state variables
@@ -223,15 +254,14 @@ class Quadcopter( object ):
         # Limit motors by max and min values
         motor_values = np.zeros(4)
         for i in range(4):
-            """
-            if values[i] > 30:
-                motor_values[i] = 30
-            elif values[i] < 0:
-                motor_values[i] = 0
-            else:
-                motor_values[i] = values[i]
-            """
+            # if values[i] > 30:
+            #     motor_values[i] = 30
+            # elif values[i] < 0:
+            #     motor_values[i] = 0
+            # else:
+            #     motor_values[i] = values[i]
             motor_values[i] = values[i]
+        # print('motor_value', motor_values)
         packedData=vrep.simxPackFloats(motor_values.flatten())
         raw_bytes = (ctypes.c_ubyte * len(packedData)).from_buffer_copy(packedData) 
         err = vrep.simxSetStringSignal(self.cid, "rotorTargetVelocities",
@@ -243,6 +273,7 @@ class Quadcopter( object ):
         x = []
         y = []
         img_np = []
+        minx, miny = 999, 999
         err, self.laser_signal = vrep.simxReadStringStream(self.cid, 'laser_data', vrep.simx_opmode_buffer)
         
         if err == vrep.simx_return_ok:
@@ -252,10 +283,7 @@ class Quadcopter( object ):
                     x.append(laser_data[i])
                     y.append(laser_data[i + 1])
             if len(x) != 0 and self.first:
-                img_np = self.draw_plt(x, y)
-                del x, y
-                # print('img type ', type(img_np))
-                
+                img_np = self.draw_plt(x, y)     
 
             if len(img_np) != 0:
                 obj.send_data(img_np)

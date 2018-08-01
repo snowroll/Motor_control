@@ -32,7 +32,8 @@ class Controller(QMainWindow, Ui_UAV):
         self.setWindowTitle('Controller')
         self.setWindowIcon(QIcon('src/logo.jpeg'))
         self.client = socket.socket()
-        self.step = 0.4
+        self.step = 0.1
+        self.save_flag = False
 
         #direct control
         self.front.mousePressEvent = self.Front_change
@@ -49,6 +50,7 @@ class Controller(QMainWindow, Ui_UAV):
         self.down.mouseReleaseEvent = self.Down
         
         self.send.clicked.connect(self.Get_info_Send)
+        self.slam_label.mousePressEvent = self.Save_img
 
         #client part
         self.s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -122,6 +124,9 @@ class Controller(QMainWindow, Ui_UAV):
         data = str_pos + ' ' + str_ori
         self.s.sendall(data.encode('utf-8'))
         print('data is ', data)
+
+    def Save_img(self, event):
+        self.save_flag = True
 
     def show_pic(self):
         success, frame = self.cap.read()
@@ -206,10 +211,15 @@ class Controller(QMainWindow, Ui_UAV):
                 im = Image.fromarray(img)
                 im = np.array(im)
                 slam_res = slam.product(im)  #slam compute
-                slam_res1 = Image.fromarray(slam_res.astype('uint8')).convert('RGB')
-                qt_im = ImageQt(slam_res1)  #convert np array to QPixmap to show
-                pix = QPixmap.fromImage(qt_im)
-                self.slam_img.setPixmap(pix)
+                if self.save_flag:
+                    slam_res = cv2.resize(slam_res, None, fx=10, fy=10)
+                    cv2.imwrite('../Data/slam.jpg', slam_res)
+                    self.save_flag = False
+                else:
+                    slam_res1 = Image.fromarray(slam_res.astype('uint8')).convert('RGB')
+                    qt_im = ImageQt(slam_res1)  #convert np array to QPixmap to show
+                    pix = QPixmap.fromImage(qt_im)
+                    self.slam_img.setPixmap(pix)
         except socket.timeout:
             pass
 
