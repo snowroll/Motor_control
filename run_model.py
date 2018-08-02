@@ -27,7 +27,7 @@ print('server begin')
 
 if __name__ == '__main__':
     step_num = 17000
-    model_name = 'pid'
+    model_name = 'pd'
     control_name = 'control'
     target_func = None  
     

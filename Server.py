@@ -38,7 +38,6 @@ class server(object):
     
     def send_data(self, img):  #img is np array
         tran_data = pickle.dumps(img)  #laser detect map
-        print('length data', len(tran_data))
         self.conn.sendall(tran_data)
         del tran_data
 

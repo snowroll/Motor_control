@@ -32,7 +32,7 @@ class Controller(QMainWindow, Ui_UAV):
         self.setWindowTitle('Controller')
         self.setWindowIcon(QIcon('src/logo.jpeg'))
         self.client = socket.socket()
-        self.step = 0.1
+        self.step = 0.3
         self.save_flag = False
 
         #direct control
@@ -123,7 +123,7 @@ class Controller(QMainWindow, Ui_UAV):
         str_ori = ' '.join(map(str, ori))
         data = str_pos + ' ' + str_ori
         self.s.sendall(data.encode('utf-8'))
-        print('data is ', data)
+        # print('data is ', data)
 
     def Save_img(self, event):
         self.save_flag = True
@@ -206,7 +206,7 @@ class Controller(QMainWindow, Ui_UAV):
         try:
             data = self.s.recv(40960000)
             if len(data) != 0:
-                print('receve data')
+                # print('receve data')
                 img = pickle.loads(data, encoding='bytes')
                 im = Image.fromarray(img)
                 im = np.array(im)
@@ -220,6 +220,7 @@ class Controller(QMainWindow, Ui_UAV):
                     qt_im = ImageQt(slam_res1)  #convert np array to QPixmap to show
                     pix = QPixmap.fromImage(qt_im)
                     self.slam_img.setPixmap(pix)
+                    self.update()
         except socket.timeout:
             pass
 

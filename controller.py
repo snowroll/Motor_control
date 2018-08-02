@@ -122,10 +122,9 @@ class PID( PD ):
     def control_step( self, obj, control_name ):
 
         self.count += 1
-        if self.count % 2 == 0:
-            if self.count == 10:  #only in controller use slam
-                self.draw_map(obj)
-                self.count = 0
+        if self.count == 10:
+            # if self.count == 10:  #only in controller use slam
+            self.draw_map(obj)
             self.get_target(obj)
             self.calculate_error()
         
@@ -144,7 +143,7 @@ class PID( PD ):
                                     ])
         
             self.update_integral()
-            # self.count = 0
+            self.count = 0
             self.send_motor_commands( self.compute_output() )
 
             vrep.simxSynchronousTrigger( self.cid )
